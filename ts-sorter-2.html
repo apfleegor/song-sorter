@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taylor Swift Song Sorter</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #f5f0e8;
+      --blush: #e8c4b8;
+      --rose: #c4706a;
+      --wine: #7a2d3a;
+      --ink: #1a1015;
+      --gold: #c9a84c;
+      --mist: #d6cfc7;
+      --white: #fffdf9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--cream);
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      width: 100%;
+      text-align: center;
+      padding: 3rem 1rem 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--rose);
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 400;
+      color: var(--wine);
+      line-height: 1.1;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--rose);
+    }
+
+    .divider {
+      width: 80px;
+      height: 1px;
+      background: var(--gold);
+      margin: 1.25rem auto;
+      position: relative;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '✦';
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.6rem;
+      color: var(--gold);
+    }
+
+    .divider::before {
+      left: -1rem;
+    }
+
+    .divider::after {
+      right: -1rem;
+    }
+
+    /* ── SELECTION SCREEN ─────────────────────────────── */
+    #selectionScreen {
+      width: min(780px, 95vw);
+      position: relative;
+      z-index: 1;
+      padding-bottom: 6rem;
+    }
+
+    .global-options {
+      background: var(--white);
+      border: 1px solid var(--mist);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .global-options p {
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--rose);
+      font-weight: 500;
+      flex-basis: 100%;
+      margin-bottom: -0.5rem;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--ink);
+      user-select: none;
+    }
+
+    .toggle-label input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--mist);
+      background: var(--cream);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .toggle-label input[type="checkbox"]:checked {
+      background: var(--wine);
+      border-color: var(--wine);
+    }
+
+    .toggle-label input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.7rem;
+      line-height: 18px;
+      text-align: center;
+    }
+
+    .toggle-label span {
+      line-height: 1.2;
+    }
+
+    .toggle-label small {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--mist);
+      margin-top: 0.1rem;
+    }
+
+    /* Album blocks */
+    .album-block {
+      background: var(--white);
+      border: 1px solid var(--mist);
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .album-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      cursor: pointer;
+      user-select: none;
+      gap: 1rem;
+    }
+
+    .album-header:hover {
+      background: rgba(232, 196, 184, 0.15);
+    }
+
+    .album-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .album-checkbox {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--mist);
+      background: var(--cream);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .album-checkbox:checked {
+      background: var(--wine);
+      border-color: var(--wine);
+    }
+
+    .album-checkbox:checked::after {
+      content: '✓';
+      position: absolute;
+      inset: 0;
+      color: white;
+      font-size: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .album-checkbox.indeterminate {
+      background: var(--blush);
+      border-color: var(--rose);
+    }
+
+    .album-checkbox.indeterminate::after {
+      content: '–';
+      position: absolute;
+      inset: 0;
+      color: var(--wine);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 16px;
+    }
+
+    .album-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--wine);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .album-count {
+      font-size: 0.75rem;
+      color: var(--mist);
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    .album-chevron {
+      width: 20px;
+      height: 20px;
+      color: var(--mist);
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .album-block.open .album-chevron {
+      transform: rotate(180deg);
+    }
+
+    .album-songs {
+      border-top: 1px solid var(--mist);
+      padding: 0.5rem 0;
+    }
+
+    .song-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.4rem 1.25rem 0.4rem 2.5rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .song-row:hover {
+      background: rgba(232, 196, 184, 0.15);
+    }
+
+    .song-row input[type="checkbox"] {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid var(--mist);
+      background: var(--cream);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .song-row input[type="checkbox"]:checked {
+      background: var(--rose);
+      border-color: var(--rose);
+    }
+
+    .song-row input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      inset: 0;
+      color: white;
+      font-size: 0.55rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .song-row label {
+      font-size: 0.95rem;
+      color: var(--ink);
+      cursor: pointer;
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .song-row.is-version label {
+      color: #999;
+      font-style: italic;
+    }
+
+    .song-row.is-noalbum label {
+      color: #999;
+    }
+
+    .badge {
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.4rem;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    .badge-version {
+      background: rgba(201, 168, 76, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+    }
+
+    .badge-nonalbum {
+      background: rgba(196, 112, 106, 0.1);
+      color: var(--rose);
+      border: 1px solid rgba(196, 112, 106, 0.2);
+    }
+
+    /* Sticky footer bar */
+    .selection-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--wine);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      z-index: 100;
+    }
+
+    .selection-footer .count-text {
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+    }
+
+    .selection-footer .count-text strong {
+      color: white;
+      font-size: 1.1rem;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+    }
+
+    .btn-start {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.65rem 2rem;
+      border: 1.5px solid white;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-start:hover:not(:disabled) {
+      background: white;
+      color: var(--wine);
+    }
+
+    .btn-start:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── SORTER SCREEN ────────────────────────────────── */
+    #sorterScreen {
+      display: none;
+      width: 100%;
+    }
+
+    #battleNumber {
+      font-size: 0.9rem;
+      letter-spacing: 0.15em;
+      color: var(--rose);
+      text-transform: uppercase;
+      min-height: 2.5rem;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    #progressWrap {
+      width: min(500px, 90vw);
+      height: 3px;
+      background: var(--mist);
+      border-radius: 2px;
+      margin: 0 auto 2.5rem;
+      overflow: hidden;
+    }
+
+    #progressBar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--rose), var(--gold));
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    #arena {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      width: min(780px, 95vw);
+      min-height: 220px;
+      position: relative;
+      z-index: 1;
+      margin: auto;
+    }
+
+    .song-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 1.5rem;
+      cursor: pointer;
+      border: 1px solid var(--mist);
+      background: white;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      min-height: 180px;
+    }
+
+    .song-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--blush), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .song-card:hover::before {
+      opacity: 1;
+    }
+
+    .song-card:hover {
+      border-color: var(--rose);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(122, 45, 58, 0.12);
+    }
+
+    #leftCard {
+      border-right: none;
+    }
+
+    #rightCard {
+      border-left: none;
+    }
+
+    .vs-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      flex-shrink: 0;
+      background: white;
+      border-top: 1px solid var(--mist);
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .vs-label {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--mist);
+      writing-mode: vertical-rl;
+      letter-spacing: 0.15em;
+    }
+
+    .song-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1rem, 2.5vw, 1.45rem);
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.3;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-hint {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--mist);
+      margin-top: 0.75rem;
+      position: relative;
+      z-index: 1;
+      transition: color 0.25s;
+    }
+
+    .song-card:hover .card-hint {
+      color: var(--rose);
+    }
+
+    #controls {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      z-index: 1;
+      position: relative;
+    }
+
+    .btn {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.9rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.65rem 1.6rem;
+      border: 1px solid currentColor;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-tie {
+      color: var(--wine);
+    }
+
+    .btn-tie:hover {
+      background: var(--wine);
+      color: white;
+    }
+
+    .btn-undo {
+      color: var(--mist);
+      border-color: var(--mist);
+      font-size: 0.8rem;
+    }
+
+    .btn-undo:not(:disabled):hover {
+      color: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .btn-undo:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-back {
+      color: var(--rose);
+      border-color: var(--rose);
+    }
+
+    .btn-back:hover {
+      background: var(--rose);
+      color: white;
+    }
+
+    .btn-csv {
+      color: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .btn-csv:hover {
+      background: var(--gold);
+      color: white;
+    }
+
+    /* Result */
+    #resultSection {
+      width: min(540px, 92vw);
+      margin: 1rem auto 4rem;
+      z-index: 1;
+      position: relative;
+      display: none;
+    }
+
+    #resultSection h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--wine);
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    #resultField table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1rem;
+    }
+
+    #resultField th {
+      background: var(--wine);
+      color: white;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      padding: 0.65rem 1rem;
+      text-align: left;
+    }
+
+    #resultField th:first-child {
+      text-align: center;
+      width: 60px;
+    }
+
+    #resultField td {
+      padding: 0.55rem 1rem;
+      border-bottom: 1px solid var(--mist);
+      color: var(--ink);
+    }
+
+    #resultField td:first-child {
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      color: var(--rose);
+    }
+
+    #resultField tr:nth-child(even) td {
+      background: rgba(232, 196, 184, 0.12);
+    }
+
+    #resultField tr:hover td {
+      background: rgba(196, 112, 106, 0.08);
+    }
+
+    footer {
+      position: fixed;
+      bottom: 1rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: var(--mist);
+      text-transform: uppercase;
+      z-index: 1;
+      /* pointer-events: none; */
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .album-block {
+      animation: fadeUp 0.35s ease both;
+    }
+
+    #siteFooter a {
+      color: var(--mist);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.2s;
+    }
+
+    #siteFooter a:hover {
+      color: var(--rose);
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <p class="subtitle">A definitive ranking</p>
+    <h1>Taylor Swift<br><em>Song Sorter</em></h1>
+    <div class="divider"></div>
+  </header>
+
+  <!-- ══ SELECTION SCREEN ══════════════════════════════════ -->
+  <div id="selectionScreen">
+
+    <div class="global-options">
+      <p>Include globally</p>
+      <label class="toggle-label">
+        <input type="checkbox" id="chk-versions" onchange="onGlobalToggle('versions')">
+        <span>
+          Alternate versions
+          <small>Acoustics, remixes, bonus edits…</small>
+        </span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="chk-nonalbum" onchange="onGlobalToggle('nonalbum')">
+        <span>
+          Non-album &amp; collaborations
+          <small>Soundtrack songs, features, EPs…</small>
+        </span>
+      </label>
+    </div>
+
+    <div id="albumList"></div>
+
+    <div class="selection-footer">
+      <div class="count-text">
+        <strong id="selectedCount">0</strong> songs selected
+      </div>
+      <button class="btn-start" id="btnStart" onclick="startSorter()" disabled>
+        I'm ready to start ✦
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ SORTER SCREEN ═════════════════════════════════════ -->
+  <div id="sorterScreen">
+    <div id="battleNumber"></div>
+    <div id="progressWrap">
+      <div id="progressBar"></div>
+    </div>
+
+    <div id="arena">
+      <div class="song-card" id="leftCard" onclick="sortList(-1)">
+        <div class="song-name" id="leftField"></div>
+        <div class="card-hint">tap to choose</div>
+      </div>
+      <div class="vs-divider"><span class="vs-label">or</span></div>
+      <div class="song-card" id="rightCard" onclick="sortList(1)">
+        <div class="song-name" id="rightField"></div>
+        <div class="card-hint">tap to choose</div>
+      </div>
+    </div>
+
+    <div id="controls">
+      <button class="btn btn-tie" onclick="sortList(0)">It's a tie</button>
+      <button class="btn btn-undo" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
+      <button class="btn btn-back" onclick="goBack()">← Change Selection</button>
+    </div>
+
+    <div id="resultSection">
+      <h2>Your Ranking</h2>
+      <div id="resultField"></div>
+      <br>
+      <div style="text-align:center; display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-back" onclick="goBack()">← Change Selection</button>
+        <button class="btn btn-csv" onclick="downloadCSV()">↓ Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <footer id="siteFooter">
+    ✦ &nbsp; choose wisely &nbsp; ✦ &nbsp;·&nbsp; built by Claude &nbsp; ✦ &nbsp;·&nbsp; based on <a
+      href="https://www.tumblr.com/jesseepinkman" target="_blank">@jesseepinkman</a>
+  </footer>
+
+  <script>
+    // ── RAW DATA ────────────────────────────────────────────────────────────────
+    const SONG_DATA = [
+      { "song": "Crazier", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Eyes Open", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Safe & Sound", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Last Christmas", "album": "Holiday Collection", "additional_version": false, "non_album": true },
+      { "song": "Christmases When You Were Mine", "album": "Holiday Collection", "additional_version": false, "non_album": true },
+      { "song": "Santa Baby", "album": "Holiday Collection", "additional_version": false, "non_album": true },
+      { "song": "Silent Night", "album": "Holiday Collection", "additional_version": false, "non_album": true },
+      { "song": "Christmas Must Be Something More", "album": "Holiday Collection", "additional_version": false, "non_album": true },
+      { "song": "White Christmas", "album": "Holiday Collection", "additional_version": false, "non_album": true },
+      { "song": "I Don't Wanna Live Forever", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Only The Young", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Beautiful Ghosts", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Macavity", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Carolina", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Christmas Tree Farm", "album": "Non-Album", "additional_version": false, "non_album": true },
+      { "song": "Highway Don't Care (Tim Mcgraw)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "Both of Us (B.o.B.)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "Half of My Heart (John Mayer)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "Gasoline (HAIM)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "Two is Better Than One (Boys Like Girls)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "Renegade (Big Red Machine)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "Birch (Big Red Machine)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "The Joker And The Queen (Ed Sheeran)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "The Alcott (The National)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "us (Gracie Abrams)", "album": "Collaboration", "additional_version": false, "non_album": true },
+      { "song": "Beautiful Eyes", "album": "Beautiful Eyes EP", "additional_version": false, "non_album": true },
+      { "song": "I Heart ?", "album": "Beautiful Eyes EP", "additional_version": false, "non_album": true },
+      { "song": "Tim McGraw", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Picture To Burn", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Teardrops On My Guitar", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "A Place In This World", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Cold As You", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "The Outside", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Tied Together With A Smile", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Stay Beautiful", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Should've Said No", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Mary's Song (Oh My My My)", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Our Song", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "I'm Only Me When I'm With You", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Invisible", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "A Perfectly Good Heart", "album": "Taylor Swift", "additional_version": false, "non_album": false },
+      { "song": "Fearless", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Fifteen", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Love Story", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Hey Stephen", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "White Horse", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "You Belong With Me", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Breathe (feat. Colbie Caillat)", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Tell Me Why", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "You're Not Sorry", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "You're Not Sorry (CSI Remix)", "album": "Fearless", "additional_version": true, "non_album": false },
+      { "song": "The Way I Loved You", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Forever & Always", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Forever & Always (Piano Version)", "album": "Fearless", "additional_version": true, "non_album": false },
+      { "song": "The Best Day", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Change", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Jump Then Fall", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Untouchable", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Come In With The Rain", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Superstar", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "The Other Side Of The Door", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Today Was A Fairytale", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "You All Over Me (feat. Maren Morris)", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Mr. Perfectly Fine", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "We Were Happy", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "That's When (feat. Keith Urban)", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Don't You", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Bye Bye Baby", "album": "Fearless", "additional_version": false, "non_album": false },
+      { "song": "Mine", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Sparks Fly", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Back To December", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Back To December (Acoustic)", "album": "Speak Now", "additional_version": true, "non_album": false },
+      { "song": "Speak Now", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Dear John", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Mean", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "The Story Of Us", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Never Grow Up", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Enchanted", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Better Than Revenge", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Innocent", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Haunted", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Haunted (Acoustic)", "album": "Speak Now", "additional_version": true, "non_album": false },
+      { "song": "Last Kiss", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Long Live", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Ours", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "If This Was A Movie", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Superman", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Electric Touch (feat. Fall Out Boy)", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "When Emma Falls In Love", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "I Can See You", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Castles Crumbling (feat. Hayley Williams)", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Foolish One", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "Timeless", "album": "Speak Now", "additional_version": false, "non_album": false },
+      { "song": "State of Grace", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "State of Grace (Acoustic Version)", "album": "Red", "additional_version": true, "non_album": false },
+      { "song": "Red", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Treacherous", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "I Knew You Were Trouble", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "All Too Well", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "All Too Well (Sad Girl Autumn Version)", "album": "Red", "additional_version": true, "non_album": false },
+      { "song": "22", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "I Almost Do", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "We Are Never Ever Getting Back Together", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Stay Stay Stay", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "The Last Time (feat. Gary Lightbody)", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Holy Ground", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Sad Beautiful Tragic", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "The Lucky One", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Everything Has Changed (feat. Ed Sheeran)", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Starlight", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Begin Again", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "The Moment I Knew", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Come Back...Be Here", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Girl At Home", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Ronan", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Better Man", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Nothing New", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Babe", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Message In A Bottle", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "I Bet You Think About Me", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Forever Winter", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Run (feat. Ed Sheeran)", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "The Very First Night", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "All Too Well (10 Minute Version)", "album": "Red", "additional_version": false, "non_album": false },
+      { "song": "Welcome To New York", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Blank Space", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Style", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Out Of The Woods", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "All You Had To Do Was Stay", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Shake It Off", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "I Wish You Would", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Bad Blood", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Bad Blood (feat. Kendrick Lamar)", "album": "1989", "additional_version": true, "non_album": false },
+      { "song": "Wildest Dreams", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "How You Get The Girl", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "This Love", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "I Know Places", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Clean", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Wonderland", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "You Are In Love", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "New Romantics", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Slut!", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Slut! (Acoustic Version)", "album": "1989", "additional_version": true, "non_album": false },
+      { "song": "Say Don't Go", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Now That We Don't Talk", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Suburban Legends", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Is It Over Now?", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "Sweeter than Fiction", "album": "1989", "additional_version": false, "non_album": false },
+      { "song": "...Ready for it?", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "End Game (feat. Ed Sheeran & Future)", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "I Did Something Bad", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Don't Blame Me", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Delicate", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Look What You Made Me Do", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "So It Goes..", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Gorgeous", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Getaway Car", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "King of My Heart", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Dancing With Our Hands Tied", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Dress", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "This Is Why We Can't Have Nice Things", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "Call It What You Want", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "New Year's Day", "album": "reputation", "additional_version": false, "non_album": false },
+      { "song": "I Forgot That You Existed", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Cruel Summer", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Lover", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "The Man", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "The Archer", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "I Think He Knows", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Miss Americana & The Heartbreak Prince", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Paper Rings", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Cornelia Street", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Death By a Thousand Cuts", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "London Boy", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Soon You'll Get Better (feat. The Chicks)", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "False God", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "You Need To Calm Down", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Afterglow", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "ME!", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "It's Nice to Have a Friend", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "Daylight", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "All Of The Girls You Loved Before", "album": "Lover", "additional_version": false, "non_album": false },
+      { "song": "the 1", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "cardigan", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "cardigan (cabin in candlelight version)", "album": "folklore", "additional_version": true, "non_album": false },
+      { "song": "the last great american dynasty", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "exile (feat. Bon Iver)", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "my tears ricochet", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "mirrorball", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "seven", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "august", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "this is me trying", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "illicit affairs", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "invisible string", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "mad woman", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "epiphany", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "betty", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "peace", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "hoax", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "the lakes", "album": "folklore", "additional_version": false, "non_album": false },
+      { "song": "the lakes (original version)", "album": "folklore", "additional_version": true, "non_album": false },
+      { "song": "willow", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "champagne problems", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "gold rush", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "'tis the damn season", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "tolerate it", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "no body, no crime (feat. HAIM)", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "happiness", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "dorothea", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "coney island (feat. The National)", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "ivy", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "cowboy like me", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "long story short", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "marjorie", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "closure", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "evermore (feat. Bon Iver)", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "right where you left me", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "it's time to go", "album": "evermore", "additional_version": false, "non_album": false },
+      { "song": "Lavender Haze", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Lavender Haze (Acoustic Version)", "album": "Midnights", "additional_version": true, "non_album": false },
+      { "song": "Maroon", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Anti-Hero", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Anti-Hero (Acoustic Version)", "album": "Midnights", "additional_version": true, "non_album": false },
+      { "song": "Snow on the Beach feat. Lana Del Rey", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Snow on the Beach feat. More Lana Del Rey", "album": "Midnights", "additional_version": true, "non_album": false },
+      { "song": "You're on Your Own, Kid", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "You're on Your Own, Kid (Strings Remix)", "album": "Midnights", "additional_version": true, "non_album": false },
+      { "song": "Midnight Rain", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Question...?", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Vigilante Shit", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Bejeweled", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Labyrinth", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Karma", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Karma (feat. IceSpice)", "album": "Midnights", "additional_version": true, "non_album": false },
+      { "song": "Sweet Nothing", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Sweet Nothing (Piano Remix)", "album": "Midnights", "additional_version": true, "non_album": false },
+      { "song": "Mastermind", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "The Great War", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Bigger Than The Whole Sky", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Paris", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "High Infidelity", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Glitch", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Would've, Could've, Should've", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Dear Reader", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Hits Different", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "You're Losing Me", "album": "Midnights", "additional_version": false, "non_album": false },
+      { "song": "Fortnight (feat. Post Malone)", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Fortnight (feat. Post Malone) (Acoustic Version)", "album": "The Tortured Poets Department", "additional_version": true, "non_album": false },
+      { "song": "The Tortured Poets Department", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "My Boy Only Breaks His Favourite Toys", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Down Bad", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Down Bad (Acoustic Version)", "album": "The Tortured Poets Department", "additional_version": true, "non_album": false },
+      { "song": "So Long, London", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "But Daddy I Love Him", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "But Daddy I Love Him (Acoustic Version)", "album": "The Tortured Poets Department", "additional_version": true, "non_album": false },
+      { "song": "Fresh out The Slammer", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Fresh out The Slammer (Acoustic Version)", "album": "The Tortured Poets Department", "additional_version": true, "non_album": false },
+      { "song": "Florida!!! (feat. Florence + the Machine)", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Guilty as Sin?", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Guilty as Sin? (Acoustic Version)", "album": "The Tortured Poets Department", "additional_version": true, "non_album": false },
+      { "song": "Who's Afraid of Little Old Me?", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "I Can Fix Him (No Really I Can)", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "loml", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "I Can Do It With a Broken Heart", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Smallest Man Who Ever Lived", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Alchemy", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Clara Bow", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Black Dog", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "imgonnagetyouback", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Albatross", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Chloe or Sam or Sophia or Marcus", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "How Did It End?", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "So High School", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "I Hate It Here", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "thanK you alMee", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "I Look in People's Windows", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Prophecy", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Cassandra", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Peter", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Bolter", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "Robin", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Manuscript", "album": "The Tortured Poets Department", "additional_version": false, "non_album": false },
+      { "song": "The Fate of Ophelia", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "The Fate of Ophelia (Alone In My Tower Acoustic Version)", "album": "The Life of a Showgirl", "additional_version": true, "non_album": false },
+      { "song": "Elizabeth Taylor", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Elizabeth Taylor (So Glamorous Cabaret Version)", "album": "The Life of a Showgirl", "additional_version": true, "non_album": false },
+      { "song": "Opalite", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Opalite (Life Is A Song Acoustic Version)", "album": "The Life of a Showgirl", "additional_version": true, "non_album": false },
+      { "song": "Father Figure", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Eldest Daughter", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Eldest Daughter (Now You're Home Acoustic Version)", "album": "The Life of a Showgirl", "additional_version": true, "non_album": false },
+      { "song": "Ruin the Friendship", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Ruin the Friendship (My Advice Version)", "album": "The Life of a Showgirl", "additional_version": true, "non_album": false },
+      { "song": "Actually Romantic", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Wi$h Li$t", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Wi$h Li$t (Settled Down Acoustic Version)", "album": "The Life of a Showgirl", "additional_version": true, "non_album": false },
+      { "song": "Wood", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "CANCELLED!", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "Honey", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "The Life of a Showgirl (feat. Sabrina Carpenter)", "album": "The Life of a Showgirl", "additional_version": false, "non_album": false },
+      { "song": "The Life of a Showgirl (feat. Sabrina Carpenter) (Dressing Room Rehearsal Version)", "album": "The Life of a Showgirl", "additional_version": true, "non_album": false }
+    ];
+
+    const ALBUM_ORDER = [
+      "Taylor Swift", "Fearless", "Speak Now", "Red", "1989", "reputation",
+      "Lover", "folklore", "evermore", "Midnights",
+      "The Tortured Poets Department", "The Life of a Showgirl",
+      "Other / Unreleased", "Beautiful Eyes EP",
+      "Holiday Collection", "Collaboration", "Non-Album"
+    ];
+
+    // ── SELECTION STATE ─────────────────────────────────────────────────────────
+    const songChecked = new Array(SONG_DATA.length).fill(false);
+
+    // albumMeta[album] = { chkEl, indices }
+    const albumMeta = {};
+
+    function buildSelectionUI() {
+      // Default: on if not additional_version and not non_album
+      for (let i = 0; i < SONG_DATA.length; i++) {
+        songChecked[i] = !SONG_DATA[i].additional_version && !SONG_DATA[i].non_album;
+      }
+
+      // Group by album
+      const albumMap = {};
+      SONG_DATA.forEach((s, i) => {
+        if (!albumMap[s.album]) albumMap[s.album] = [];
+        albumMap[s.album].push(i);
+      });
+
+      const orderedAlbums = [
+        ...ALBUM_ORDER.filter(a => albumMap[a]),
+        ...Object.keys(albumMap).filter(a => !ALBUM_ORDER.includes(a))
+      ];
+
+      const container = document.getElementById('albumList');
+      container.innerHTML = '';
+
+      orderedAlbums.forEach((album, ai) => {
+        const indices = albumMap[album];
+        albumMeta[album] = { indices };
+
+        const block = document.createElement('div');
+        block.className = 'album-block';
+        block.style.animationDelay = (ai * 0.035) + 's';
+
+        // ── Header ──
+        const header = document.createElement('div');
+        header.className = 'album-header';
+
+        const left = document.createElement('div');
+        left.className = 'album-left';
+
+        const albumChk = document.createElement('input');
+        albumChk.type = 'checkbox';
+        albumChk.className = 'album-checkbox';
+        albumMeta[album].chkEl = albumChk;
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'album-name';
+        nameEl.textContent = album;
+
+        left.appendChild(albumChk);
+        left.appendChild(nameEl);
+
+        const countEl = document.createElement('span');
+        countEl.className = 'album-count';
+
+        // Chevron SVG
+        const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        chevron.setAttribute('viewBox', '0 0 20 20');
+        chevron.setAttribute('fill', 'none');
+        chevron.setAttribute('stroke', 'currentColor');
+        chevron.setAttribute('stroke-width', '1.5');
+        chevron.classList.add('album-chevron');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('d', 'M5 7.5l5 5 5-5');
+        chevron.appendChild(path);
+
+        header.appendChild(left);
+        header.appendChild(countEl);
+        header.appendChild(chevron);
+
+        // ── Songs panel ──
+        const songsDiv = document.createElement('div');
+        songsDiv.className = 'album-songs';
+        songsDiv.hidden = true;
+
+        indices.forEach(idx => {
+          const s = SONG_DATA[idx];
+          const row = document.createElement('div');
+          row.className = 'song-row';
+          if (s.additional_version) row.classList.add('is-version');
+          if (s.non_album) row.classList.add('is-noalbum');
+
+          const chk = document.createElement('input');
+          chk.type = 'checkbox';
+          chk.id = 'song-' + idx;
+          chk.checked = songChecked[idx];
+
+          const lbl = document.createElement('label');
+          lbl.htmlFor = 'song-' + idx;
+          lbl.textContent = s.song;
+
+          row.appendChild(chk);
+          row.appendChild(lbl);
+
+          if (s.additional_version) {
+            const b = document.createElement('span');
+            b.className = 'badge badge-version';
+            b.textContent = 'alt';
+            row.appendChild(b);
+          }
+          if (s.non_album) {
+            const b = document.createElement('span');
+            b.className = 'badge badge-nonalbum';
+            b.textContent = 'non-album';
+            row.appendChild(b);
+          }
+
+          chk.addEventListener('change', () => {
+            songChecked[idx] = chk.checked;
+            refreshAlbumChk(album);
+            updateCount();
+          });
+
+          row.addEventListener('click', e => {
+            if (e.target !== chk) { chk.checked = !chk.checked; chk.dispatchEvent(new Event('change')); }
+          });
+
+          songsDiv.appendChild(row);
+        });
+
+        // Album checkbox: select/deselect all visible songs
+        // albumChk.addEventListener('change', e => {
+        //   e.stopPropagation();
+        //   const wantChecked = albumChk.checked;
+        //   albumChk.classList.remove('indeterminate');
+        //   indices.forEach(idx => {
+        //     const s = SONG_DATA[idx];
+        //     const incV = document.getElementById('chk-versions').checked;
+        //     const incN = document.getElementById('chk-nonalbum').checked;
+        //     // When turning off, turn off everything; when turning on, respect global filters
+        //     const allowed = !s.additional_version || incV;
+        //     const allowedN = !s.non_album || incN;
+        //     if (!wantChecked || (allowed && allowedN)) {
+        //       songChecked[idx] = wantChecked;
+        //       document.getElementById('song-' + idx).checked = wantChecked;
+        //     }
+        //   });
+        //   refreshAlbumChk(album);
+        //   updateCount();
+        // });
+        albumChk.addEventListener('change', e => {
+          e.stopPropagation();
+          const allChecked = indices.every(i => songChecked[i]);
+          const wantChecked = !allChecked;
+          indices.forEach(idx => {
+            songChecked[idx] = wantChecked;
+            document.getElementById('song-' + idx).checked = wantChecked;
+          });
+          refreshAlbumChk(album);
+          updateCount();
+        });
+
+        // Expand/collapse
+        header.addEventListener('click', e => {
+          if (e.target === albumChk) return;
+          const open = !block.classList.contains('open');
+          block.classList.toggle('open', open);
+          songsDiv.hidden = !open;
+        });
+
+        block.appendChild(header);
+        block.appendChild(songsDiv);
+        container.appendChild(block);
+      });
+
+      // Initial state sync
+      orderedAlbums.forEach(a => refreshAlbumChk(a));
+      updateCount();
+    }
+
+    function refreshAlbumChk(album) {
+      const { chkEl, indices } = albumMeta[album];
+      const total = indices.length;
+      const checked = indices.filter(i => songChecked[i]).length;
+      if (checked === 0) {
+        chkEl.checked = false;
+        chkEl.classList.remove('indeterminate');
+      } else if (checked === total) {
+        chkEl.checked = true;
+        chkEl.classList.remove('indeterminate');
+      } else {
+        chkEl.checked = false;
+        chkEl.classList.add('indeterminate');
+      }
+    }
+
+    function updateCount() {
+      const count = songChecked.filter(Boolean).length;
+      document.getElementById('selectedCount').textContent = count;
+      document.getElementById('btnStart').disabled = count < 2;
+    }
+
+    function onGlobalToggle(type) {
+      const incVersions = document.getElementById('chk-versions').checked;
+      const incNonAlbum = document.getElementById('chk-nonalbum').checked;
+
+      SONG_DATA.forEach((s, i) => {
+        const el = document.getElementById('song-' + i);
+        if (!el) return;
+        if (type === 'versions' && s.additional_version) {
+          songChecked[i] = incVersions;
+          el.checked = incVersions;
+        }
+        if (type === 'nonalbum' && s.non_album) {
+          songChecked[i] = incNonAlbum;
+          el.checked = incNonAlbum;
+        }
+      });
+
+      Object.keys(albumMeta).forEach(a => refreshAlbumChk(a));
+      updateCount();
+    }
+
+    // ── SORTER ──────────────────────────────────────────────────────────────────
+    let namMember = [];
+    let lstMember = [], parent = [], equal = [], rec = [];
+    let cmp1, cmp2, head1, head2, nrec;
+    let numQuestion, totalSize, finishSize, finishFlag;
+    let undoState = null;
+
+    function startSorter() {
+      namMember = SONG_DATA.filter((_, i) => songChecked[i]).map(s => s.song);
+      if (namMember.length < 2) return;
+
+      document.getElementById('selectionScreen').style.display = 'none';
+      document.getElementById('siteFooter').style.display = 'none';
+      document.getElementById('sorterScreen').style.display = 'block';
+      document.getElementById('resultSection').style.display = 'none';
+      document.getElementById('arena').style.display = 'flex';
+      document.getElementById('controls').style.display = 'flex';
+
+      initList();
+      showImage();
+    }
+
+    function goBack() {
+      document.getElementById('sorterScreen').style.display = 'none';
+      document.getElementById('siteFooter').style.display = '';
+      document.getElementById('selectionScreen').style.display = 'block';
+    }
+
+    function saveUndoState() {
+      undoState = {
+        cmp1, cmp2, head1, head2, nrec, numQuestion, finishSize,
+        rec: rec.slice(), equal: equal.slice(),
+        lstMember: lstMember.map(a => a.slice()),
+        parent: parent.slice()
+      };
+      updateUndoButton();
+    }
+
+    function undo() {
+      if (!undoState) return;
+      ({ cmp1, cmp2, head1, head2, nrec, numQuestion, finishSize } = undoState);
+      rec = undoState.rec.slice();
+      equal = undoState.equal.slice();
+      lstMember = undoState.lstMember.map(a => a.slice());
+      parent = undoState.parent.slice();
+      undoState = null; finishFlag = 0;
+      document.getElementById('resultField').innerHTML = '';
+      document.getElementById('resultSection').style.display = 'none';
+      document.getElementById('arena').style.display = 'flex';
+      document.getElementById('controls').style.display = 'flex';
+      updateUndoButton();
+      showImage();
+    }
+
+    function updateUndoButton() {
+      document.getElementById('undoBtn').disabled = !undoState;
+    }
+
+    function updateProgress(pct) {
+      document.getElementById('progressBar').style.width = pct + '%';
+    }
+
+    function initList() {
+      lstMember = []; parent = []; equal = []; rec = [];
+      let n = 0;
+      lstMember[n] = namMember.map((_, i) => i);
+      parent[n] = -1;
+      totalSize = 0; n++;
+
+      for (let i = 0; i < lstMember.length; i++) {
+        if (lstMember[i].length >= 2) {
+          const mid = Math.ceil(lstMember[i].length / 2);
+          lstMember[n] = lstMember[i].slice(0, mid); totalSize += lstMember[n].length; parent[n] = i; n++;
+          lstMember[n] = lstMember[i].slice(mid); totalSize += lstMember[n].length; parent[n] = i; n++;
+        }
+      }
+
+      for (let i = 0; i < namMember.length; i++) rec[i] = 0;
+      nrec = 0;
+      for (let i = 0; i <= namMember.length; i++) equal[i] = -1;
+      cmp1 = lstMember.length - 2; cmp2 = lstMember.length - 1;
+      head1 = 0; head2 = 0;
+      numQuestion = 1; finishSize = 0; finishFlag = 0;
+      undoState = null;
+      updateUndoButton();
+      updateProgress(0);
+    }
+
+    function sortList(flag) {
+      saveUndoState();
+
+      if (flag < 0) {
+        rec[nrec] = lstMember[cmp1][head1]; head1++; nrec++; finishSize++;
+        while (equal[rec[nrec - 1]] != -1) { rec[nrec] = lstMember[cmp1][head1]; head1++; nrec++; finishSize++; }
+      } else if (flag > 0) {
+        rec[nrec] = lstMember[cmp2][head2]; head2++; nrec++; finishSize++;
+        while (equal[rec[nrec - 1]] != -1) { rec[nrec] = lstMember[cmp2][head2]; head2++; nrec++; finishSize++; }
+      } else {
+        rec[nrec] = lstMember[cmp1][head1]; head1++; nrec++; finishSize++;
+        while (equal[rec[nrec - 1]] != -1) { rec[nrec] = lstMember[cmp1][head1]; head1++; nrec++; finishSize++; }
+        equal[rec[nrec - 1]] = lstMember[cmp2][head2];
+        rec[nrec] = lstMember[cmp2][head2]; head2++; nrec++; finishSize++;
+        while (equal[rec[nrec - 1]] != -1) { rec[nrec] = lstMember[cmp2][head2]; head2++; nrec++; finishSize++; }
+      }
+
+      if (head1 < lstMember[cmp1].length && head2 === lstMember[cmp2].length) {
+        while (head1 < lstMember[cmp1].length) { rec[nrec] = lstMember[cmp1][head1]; head1++; nrec++; finishSize++; }
+      } else if (head1 === lstMember[cmp1].length && head2 < lstMember[cmp2].length) {
+        while (head2 < lstMember[cmp2].length) { rec[nrec] = lstMember[cmp2][head2]; head2++; nrec++; finishSize++; }
+      }
+
+      if (head1 === lstMember[cmp1].length && head2 === lstMember[cmp2].length) {
+        for (let i = 0; i < lstMember[cmp1].length + lstMember[cmp2].length; i++) {
+          lstMember[parent[cmp1]][i] = rec[i];
+        }
+        lstMember.pop(); lstMember.pop();
+        cmp1 -= 2; cmp2 -= 2;
+        head1 = 0; head2 = 0;
+        for (let i = 0; i < namMember.length; i++) rec[i] = 0;
+        nrec = 0;
+      }
+
+      const pct = Math.floor(finishSize * 100 / totalSize);
+      updateProgress(pct);
+
+      if (cmp1 < 0) {
+        document.getElementById('battleNumber').innerHTML = 'Battle #' + (numQuestion - 1) + '<br>' + pct + '% sorted.';
+        showResult(); finishFlag = 1;
+      } else {
+        showImage();
+      }
+    }
+
+    function showResult() {
+      let ranking = 1, sameRank = 1, str = '';
+      str += '<table><tr><th>#</th><th>Song</th></tr>';
+      for (let i = 0; i < namMember.length; i++) {
+        str += '<tr><td>' + ranking + '</td><td>' + namMember[lstMember[0][i]] + '</td></tr>';
+        if (i < namMember.length - 1) {
+          if (equal[lstMember[0][i]] === lstMember[0][i + 1]) sameRank++;
+          else { ranking += sameRank; sameRank = 1; }
+        }
+      }
+      str += '</table>';
+      document.getElementById('resultField').innerHTML = str;
+      document.getElementById('arena').style.display = 'none';
+      document.getElementById('controls').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'block';
+    }
+
+    function showImage() {
+      const pct = Math.floor(finishSize * 100 / totalSize);
+      document.getElementById('battleNumber').innerHTML =
+        'Battle #' + numQuestion + ' &nbsp;·&nbsp; ' + pct + '% sorted';
+      document.getElementById('leftField').textContent = namMember[lstMember[cmp1][head1]];
+      document.getElementById('rightField').textContent = namMember[lstMember[cmp2][head2]];
+      numQuestion++;
+    }
+
+    function downloadCSV() {
+      let ranking = 1, sameRank = 1;
+      const rows = [['Rank', 'Song']];
+      for (let i = 0; i < namMember.length; i++) {
+        const song = namMember[lstMember[0][i]];
+        rows.push([ranking, '"' + song.replace(/"/g, '""') + '"']);
+        if (i < namMember.length - 1) {
+          if (equal[lstMember[0][i]] === lstMember[0][i + 1]) sameRank++;
+          else { ranking += sameRank; sameRank = 1; }
+        }
+      }
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'taylor-swift-ranking.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ── INIT ────────────────────────────────────────────────────────────────────
+    buildSelectionUI();
+  </script>
+</body>
+
+</html>
